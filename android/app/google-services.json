@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746081633965",
+    "project_id": "sme-system-19a03",
+    "storage_bucket": "sme-system-19a03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746081633965:android:1a45b6115e52f33c8ba824",
+        "android_client_info": {
+          "package_name": "com.sme.sme_system"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCx9LZZwnGgR1oeyPwkxa49SvwD_Nki4rY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
