@@ -8,6 +8,7 @@ import '../auth/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../reports/transactions_screen.dart';
 import '../settings/settings_screen.dart';
+import '../../core/services/low_stock_monitor.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -56,6 +57,8 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Activate low stock monitor
+    ref.watch(lowStockMonitorProvider);
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(

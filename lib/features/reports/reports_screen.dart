@@ -21,7 +21,36 @@ class ReportsScreen extends ConsumerWidget {
       body: summaryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (summary) => SingleChildScrollView(
+        data: (summary) {
+          return Column(
+    children: [
+      // Low stock banner (shows on web and Android)
+      if (summary.lowStockCount > 0)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 10),
+          color: AppColors.lowStock,
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: AppColors.warning, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${summary.lowStockCount} product${summary.lowStockCount != 1 ? 's are' : ' is'} running low on stock',
+                  style: const TextStyle(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      Expanded(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,111 +217,111 @@ class ReportsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Best sellers shortcut
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text('Best Selling Products',
-        style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: AppColors.textPrimary)),
-    TextButton.icon(
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const BestSellersScreen(),
-        ),
-      ),
-      icon: const Icon(Icons.arrow_forward, size: 16),
-      label: const Text('See All'),
-    ),
-  ],
-),
-const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Best Selling Products',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary)),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BestSellersScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('See All'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
-// Top 3 preview
-...() {
-  final bestAsync = ref.watch(bestSellingProductsProvider);
-  return bestAsync.when(
-    loading: () => [const LinearProgressIndicator()],
-    error: (e, _) => [],
-    data: (products) {
-      final top3 = products.take(3).toList();
-      if (top3.isEmpty) {
-        return [
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(
-                child: Text('No sales data yet',
-                    style:
-                        TextStyle(color: AppColors.textSecondary)),
+              // Top 3 preview
+              Builder(
+                builder: (_) {
+                  final bestAsync = ref.watch(bestSellingProductsProvider);
+                  return bestAsync.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(),
+                    ),
+                    error: (e, _) => const SizedBox.shrink(),
+                    data: (products) {
+                      final top3 = products.take(3).toList();
+                      if (top3.isEmpty) {
+                        return const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: Text('No sales data yet',
+                                  style: TextStyle(
+                                      color: AppColors.textSecondary)),
+                            ),
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: top3.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final product = entry.value;
+                          final medals = ['🥇', '🥈', '🥉'];
+                          return Card(
+                            child: ListTile(
+                              leading: Text(medals[index],
+                                  style: const TextStyle(fontSize: 24)),
+                              title: Text(product.productName,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                              subtitle: Text(
+                                  'ZMW ${product.totalRevenue.toStringAsFixed(2)} revenue'),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${product.totalQuantitySold} units',
+                                  style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  );
+                },
               ),
-            ),
-          )
-        ];
-      }
-      return top3.asMap().entries.map((entry) {
-        final index = entry.key;
-        final product = entry.value;
-        final medals = ['🥇', '🥈', '🥉'];
-        return Card(
-          child: ListTile(
-            leading: Text(medals[index],
-                style: const TextStyle(fontSize: 24)),
-            title: Text(product.productName,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(
-                'ZMW ${product.totalRevenue.toStringAsFixed(2)} revenue'),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${product.totalQuantitySold} units',
-                style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13),
-              ),
-            ),
-          ),
-        );
-      }).toList();
-    },
-  );
-}(),
 
-const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Recent transactions
               Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text('Recent Transactions',
-        style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: AppColors.textPrimary)),
-    TextButton.icon(
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const DailySalesScreen(),
-        ),
-      ),
-      icon: const Icon(Icons.arrow_forward, size: 16),
-      label: const Text('Daily History'),
-    ),
-  ],
-),
-              const Text('Recent Transactions',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppColors.textPrimary)),
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Recent Transactions',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary)),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DailySalesScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('Daily History'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               Card(
                 child: RecentTransactionsList(
@@ -304,6 +333,10 @@ const SizedBox(height: 16),
             ],
           ),
         ),
+      ),
+    ],
+  );
+},
       ),
     );
   }
