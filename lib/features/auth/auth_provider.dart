@@ -30,3 +30,10 @@ class AuthNotifier extends AsyncNotifier<void> {
 
 final authNotifierProvider =
     AsyncNotifierProvider<AuthNotifier, void>(AuthNotifier.new);
+
+// Provides the current user's ID throughout the app
+final currentUserIdProvider = Provider<String>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception('No user logged in');
+  return user.uid;
+});

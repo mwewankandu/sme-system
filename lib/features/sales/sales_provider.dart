@@ -1,14 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/transaction.dart';
+import '../auth/auth_provider.dart';
 import '../inventory/inventory_provider.dart';
+import '../customers/customer_provider.dart';
 
-// Real-time stream of all transactions
+// User's transactions collection reference
+final transactionsCollectionProvider =
+    Provider<CollectionReference>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return firestore
+      .collection('users')
+      .doc(userId)
+      .collection('transactions');
+});
+
+// Real-time stream of current user's transactions
 final transactionsStreamProvider =
     StreamProvider<List<SaleTransaction>>((ref) {
-  final firestore = ref.watch(firestoreProvider);
-  return firestore
-      .collection('transactions')
+  final collection = ref.watch(transactionsCollectionProvider);
+  return collection
       .orderBy('createdAt', descending: true)
       .snapshots()
       .map((snapshot) => snapshot.docs
@@ -16,7 +28,22 @@ final transactionsStreamProvider =
           .toList());
 });
 
-// Holds the items currently being added to a new sale
+// Transactions for a specific customer
+final customerTransactionsProvider =
+    StreamProvider.family<List<SaleTransaction>, String>(
+        (ref, customerId) {
+  final collection = ref.watch(transactionsCollectionProvider);
+  return collection
+      .where('customerId', isEqualTo: customerId)
+      .where('paymentMethod', isEqualTo: 'credit')
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => SaleTransaction.fromFirestore(doc))
+          .toList());
+});
+
+// Cart
 final cartProvider =
     StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
   return CartNotifier();
@@ -42,7 +69,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
   void addItem(CartItem item) {
-    final existing = state.indexWhere((i) => i.productId == item.productId);
+    final existing =
+        state.indexWhere((i) => i.productId == item.productId);
     if (existing >= 0) {
       state = [
         for (int i = 0; i < state.length; i++)
@@ -101,10 +129,14 @@ class SalesNotifier extends AsyncNotifier<void> {
     String? customerId,
   }) async {
     final firestore = ref.read(firestoreProvider);
+    final userId = ref.read(currentUserIdProvider);
     final batch = firestore.batch();
 
-    // 1. Create the transaction document
-    final transactionRef = firestore.collection('transactions').doc();
+    final userRef = firestore.collection('users').doc(userId);
+
+    // 1. Create transaction
+    final transactionRef =
+        userRef.collection('transactions').doc();
     final transaction = SaleTransaction(
       id: transactionRef.id,
       items: items
@@ -115,54 +147,38 @@ class SalesNotifier extends AsyncNotifier<void> {
                 unitPrice: i.unitPrice,
               ))
           .toList(),
-      totalAmount: items.fold(0.0, (sum, i) => sum + i.subtotal),
+      totalAmount:
+          items.fold(0.0, (sum, i) => sum + i.subtotal),
       paymentMethod: paymentMethod,
       customerId: customerId,
       createdAt: DateTime.now(),
     );
     batch.set(transactionRef, transaction.toFirestore());
 
-    // 2. Deduct stock for each product
+    // 2. Deduct stock
     for (final item in items) {
       final productRef =
-          firestore.collection('products').doc(item.productId);
+          userRef.collection('products').doc(item.productId);
       batch.update(productRef, {
         'stockQuantity': FieldValue.increment(-item.quantity),
       });
     }
 
-    // 3. If credit sale, update customer balance
-    if (paymentMethod == PaymentMethod.credit && customerId != null) {
+    // 3. Update customer credit balance
+    if (paymentMethod == PaymentMethod.credit &&
+        customerId != null) {
       final customerRef =
-          firestore.collection('customers').doc(customerId);
+          userRef.collection('customers').doc(customerId);
       batch.update(customerRef, {
         'creditBalance':
             FieldValue.increment(transaction.totalAmount),
       });
     }
 
-    // Commit everything atomically
     await batch.commit();
-
-    // Clear the cart
     ref.read(cartProvider.notifier).clear();
   }
 }
 
 final salesNotifierProvider =
     AsyncNotifierProvider<SalesNotifier, void>(SalesNotifier.new);
-
-// Transactions for a specific customer
-final customerTransactionsProvider =
-    StreamProvider.family<List<SaleTransaction>, String>((ref, customerId) {
-  final firestore = ref.watch(firestoreProvider);
-  return firestore
-      .collection('transactions')
-      .where('customerId', isEqualTo: customerId)
-      .where('paymentMethod', isEqualTo: 'credit')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snapshot) => snapshot.docs
-          .map((doc) => SaleTransaction.fromFirestore(doc))
-          .toList());
-});

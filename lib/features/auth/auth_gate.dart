@@ -20,7 +20,14 @@ class AuthGate extends ConsumerWidget {
       ),
       data: (user) {
         if (user == null) return const LoginScreen();
-        return const MainShell();
+
+        // Key forces Flutter to rebuild the entire shell
+        // with fresh providers every time the user changes
+        return ProviderScope(
+          key: ValueKey(user.uid),
+          overrides: [],
+          child: const MainShell(),
+        );
       },
     );
   }

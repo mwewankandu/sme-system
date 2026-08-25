@@ -4,10 +4,10 @@ import '../inventory/inventory_screen.dart';
 import '../sales/sales_screen.dart';
 import '../customers/customers_screen.dart';
 import '../reports/reports_screen.dart';
-import '../auth/auth_provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../reports/transactions_screen.dart';
 import '../settings/settings_screen.dart';
+import '../auth/auth_provider.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/services/low_stock_monitor.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -26,55 +26,50 @@ class _MainShellState extends ConsumerState<MainShell> {
     SalesScreen(),
     InventoryScreen(),
     CustomersScreen(),
-    SettingsScreen(),
   ];
 
-  Future<void> _confirmSignOut() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sign Out'),
-          ),
-        ],
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SettingsScreen(),
       ),
     );
-
-    if (confirm == true) {
-      await ref.read(authNotifierProvider.notifier).signOut();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     // Activate low stock monitor
     ref.watch(lowStockMonitorProvider);
+
     return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('SME System'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined,
+                color: Colors.white),
+            tooltip: 'Settings',
+            onPressed: _openSettings,
+          ),
+        ],
+      ),
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
+        onDestinationSelected: (i) =>
+            setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-            NavigationDestination(
-    icon: Icon(Icons.receipt_long_outlined),
-    selectedIcon: Icon(Icons.receipt_long),
-    label: 'Transactions',
-  ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Transactions',
+          ),
           NavigationDestination(
             icon: Icon(Icons.point_of_sale_outlined),
             selectedIcon: Icon(Icons.point_of_sale),
@@ -90,25 +85,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             selectedIcon: Icon(Icons.people),
             label: 'Customers',
           ),
-            NavigationDestination(
-    icon: Icon(Icons.settings_outlined),
-    selectedIcon: Icon(Icons.settings),
-    label: 'Settings',
-  ),
         ],
-      ),
-      // Sign out button in each screen's app bar area
-      floatingActionButtonLocation: FloatingActionButtonLocation.miniEndTop,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: FloatingActionButton.small(
-          heroTag: 'signout_fab',
-          onPressed: _confirmSignOut,
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.danger,
-          tooltip: 'Sign Out',
-          child: const Icon(Icons.logout, size: 18),
-        ),
       ),
     );
   }

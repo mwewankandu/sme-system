@@ -1,17 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/product.dart';
+import '../auth/auth_provider.dart';
 
-// Firestore instance provider
+// Firestore instance
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
 
-// Real-time stream of all products
-final productsStreamProvider = StreamProvider<List<Product>>((ref) {
+// User's products collection reference
+final productsCollectionProvider = Provider<CollectionReference>((ref) {
   final firestore = ref.watch(firestoreProvider);
+  final userId = ref.watch(currentUserIdProvider);
   return firestore
-      .collection('products')
+      .collection('users')
+      .doc(userId)
+      .collection('products');
+});
+
+// Real-time stream of current user's products
+final productsStreamProvider = StreamProvider<List<Product>>((ref) {
+  final collection = ref.watch(productsCollectionProvider);
+  return collection
       .orderBy('name')
       .snapshots()
       .map((snapshot) =>
@@ -24,29 +34,27 @@ class InventoryNotifier extends AsyncNotifier<void> {
   Future<void> build() async {}
 
   Future<void> addProduct(Product product) async {
-    final firestore = ref.read(firestoreProvider);
-    await firestore.collection('products').add(product.toFirestore());
+    final collection = ref.read(productsCollectionProvider);
+    await collection.add(product.toFirestore());
   }
 
   Future<void> updateProduct(Product product) async {
-    final firestore = ref.read(firestoreProvider);
-    await firestore
-        .collection('products')
-        .doc(product.id)
-        .update(product.toFirestore());
+    final collection = ref.read(productsCollectionProvider);
+    await collection.doc(product.id).update(product.toFirestore());
   }
 
   Future<void> deleteProduct(String productId) async {
-    final firestore = ref.read(firestoreProvider);
-    await firestore.collection('products').doc(productId).delete();
+    final collection = ref.read(productsCollectionProvider);
+    await collection.doc(productId).delete();
   }
-  
-  Future<void> restockProduct(String productId, int quantityToAdd) async {
-  final firestore = ref.read(firestoreProvider);
-  await firestore.collection('products').doc(productId).update({
-    'stockQuantity': FieldValue.increment(quantityToAdd),
-  });
-}
+
+  Future<void> restockProduct(
+      String productId, int quantityToAdd) async {
+    final collection = ref.read(productsCollectionProvider);
+    await collection.doc(productId).update({
+      'stockQuantity': FieldValue.increment(quantityToAdd),
+    });
+  }
 }
 
 final inventoryNotifierProvider =

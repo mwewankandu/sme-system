@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import 'settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth/auth_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -85,6 +86,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+ Future<void> _confirmSignOut(BuildContext context) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Sign Out'),
+      content: const Text('Are you sure you want to sign out?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Sign Out'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    // Pop all routes first so settings screen is removed
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    await ref.read(authNotifierProvider.notifier).signOut();
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +295,23 @@ const SizedBox(height: 24),
                           style: TextStyle(fontSize: 16)),
                     ),
                   ),
+                  const SizedBox(height: 16),
+
+// Sign out button
+SizedBox(
+  width: double.infinity,
+  child: OutlinedButton.icon(
+    onPressed: () => _confirmSignOut(context),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppColors.danger,
+      side: const BorderSide(color: AppColors.danger),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+    ),
+    icon: const Icon(Icons.logout),
+    label: const Text('Sign Out',
+        style: TextStyle(fontSize: 16)),
+  ),
+),
                   const SizedBox(height: 80),
                 ],
               ),
