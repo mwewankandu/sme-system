@@ -6,6 +6,7 @@ import '../inventory/inventory_provider.dart';
 import '../customers/customer_provider.dart';
 import 'sales_provider.dart';
 import 'widgets/cart_item_tile.dart';
+import 'receipt_screen.dart';
 
 class SalesScreen extends ConsumerStatefulWidget {
   const SalesScreen({super.key});
@@ -20,54 +21,59 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   bool _isProcessing = false;
 
   Future<void> _recordSale() async {
-    final cart = ref.read(cartProvider);
-    if (cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Add at least one product to the cart')),
-      );
-      return;
-    }
-    if (_paymentMethod == PaymentMethod.credit &&
-        _selectedCustomerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Select a customer for credit sales')),
-      );
-      return;
-    }
-
-    setState(() => _isProcessing = true);
-    try {
-      await ref.read(salesNotifierProvider.notifier).recordSale(
-            items: cart,
-            paymentMethod: _paymentMethod,
-            customerId: _selectedCustomerId,
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sale recorded successfully!'),
-            backgroundColor: AppColors.secondary,
-          ),
-        );
-        setState(() {
-          _paymentMethod = PaymentMethod.cash;
-          _selectedCustomerId = null;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppColors.danger),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
-    }
+  final cart = ref.read(cartProvider);
+  if (cart.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Add at least one product to the cart')),
+    );
+    return;
   }
+  if (_paymentMethod == PaymentMethod.credit &&
+      _selectedCustomerId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Select a customer for credit sales')),
+    );
+    return;
+  }
+
+  setState(() => _isProcessing = true);
+  try {
+    final transaction = await ref
+        .read(salesNotifierProvider.notifier)
+        .recordSale(
+          items: cart,
+          paymentMethod: _paymentMethod,
+          customerId: _selectedCustomerId,
+        );
+
+    if (mounted) {
+      setState(() {
+        _paymentMethod = PaymentMethod.cash;
+        _selectedCustomerId = null;
+      });
+
+      // Navigate to receipt screen
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReceiptScreen(transaction: transaction),
+        ),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.danger),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => _isProcessing = false);
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/transaction.dart';
 import '../auth/auth_provider.dart';
 import '../inventory/inventory_provider.dart';
-import '../customers/customer_provider.dart';
 
 // User's transactions collection reference
 final transactionsCollectionProvider =
@@ -115,7 +114,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   void clear() => state = [];
 
   double get total =>
-      state.fold(0.0, (sum, item) => sum + item.subtotal);
+      state.fold(0.0, (total, item) => total + item.subtotal);
 }
 
 // Sales operations
@@ -123,61 +122,63 @@ class SalesNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<void> recordSale({
-    required List<CartItem> items,
-    required PaymentMethod paymentMethod,
-    String? customerId,
-  }) async {
-    final firestore = ref.read(firestoreProvider);
-    final userId = ref.read(currentUserIdProvider);
-    final batch = firestore.batch();
+  Future<SaleTransaction> recordSale({
+  required List<CartItem> items,
+  required PaymentMethod paymentMethod,
+  String? customerId,
+}) async {
+  final firestore = ref.read(firestoreProvider);
+  final userId = ref.read(currentUserIdProvider);
+  final batch = firestore.batch();
 
-    final userRef = firestore.collection('users').doc(userId);
+  final userRef = firestore.collection('users').doc(userId);
 
-    // 1. Create transaction
-    final transactionRef =
-        userRef.collection('transactions').doc();
-    final transaction = SaleTransaction(
-      id: transactionRef.id,
-      items: items
-          .map((i) => TransactionItem(
-                productId: i.productId,
-                productName: i.productName,
-                quantity: i.quantity,
-                unitPrice: i.unitPrice,
-              ))
-          .toList(),
-      totalAmount:
-          items.fold(0.0, (sum, i) => sum + i.subtotal),
-      paymentMethod: paymentMethod,
-      customerId: customerId,
-      createdAt: DateTime.now(),
-    );
-    batch.set(transactionRef, transaction.toFirestore());
+  // 1. Create transaction
+  final transactionRef = userRef.collection('transactions').doc();
+  final transaction = SaleTransaction(
+    id: transactionRef.id,
+    items: items
+        .map((i) => TransactionItem(
+              productId: i.productId,
+              productName: i.productName,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+            ))
+        .toList(),
+    totalAmount: items.fold(0.0, (total, i) => total + i.subtotal),
+    paymentMethod: paymentMethod,
+    customerId: customerId,
+    createdAt: DateTime.now(),
+  );
+  batch.set(transactionRef, transaction.toFirestore());
 
-    // 2. Deduct stock
-    for (final item in items) {
-      final productRef =
-          userRef.collection('products').doc(item.productId);
-      batch.update(productRef, {
-        'stockQuantity': FieldValue.increment(-item.quantity),
-      });
-    }
-
-    // 3. Update customer credit balance
-    if (paymentMethod == PaymentMethod.credit &&
-        customerId != null) {
-      final customerRef =
-          userRef.collection('customers').doc(customerId);
-      batch.update(customerRef, {
-        'creditBalance':
-            FieldValue.increment(transaction.totalAmount),
-      });
-    }
-
-    await batch.commit();
-    ref.read(cartProvider.notifier).clear();
+  // 2. Deduct stock
+  for (final item in items) {
+    final productRef =
+        userRef.collection('products').doc(item.productId);
+    batch.update(productRef, {
+      'stockQuantity': FieldValue.increment(-item.quantity),
+    });
   }
+
+  // 3. Update customer credit balance
+  if (paymentMethod == PaymentMethod.credit &&
+      customerId != null) {
+    final customerRef =
+        userRef.collection('customers').doc(customerId);
+    batch.update(customerRef, {
+      'creditBalance':
+          FieldValue.increment(transaction.totalAmount),
+    });
+  }
+
+  await batch.commit();
+  ref.read(cartProvider.notifier).clear();
+
+  // Return the transaction so UI can show receipt
+  return transaction;
+}
+
 }
 
 final salesNotifierProvider =

@@ -8,26 +8,30 @@ A Flutter-based business management system for small and medium enterprises (SME
 
 | Name | Role |
 |---|---|
-| Mwewankandu | Lead Developer |
-| Moses | Developer |
+| Mwewa Nkandu | Lead Developer |
 | Mwape | Developer |
+| Moses | Developer |
 
 ---
 
 ## ✅ Features
 
-- 🔐 Authentication — Sign up / Sign in with email and password
+- 🔐 Authentication — Sign up / Sign in with email and password, per-user isolated data
 - 📦 Inventory Management — Add, edit, delete, restock products with low stock alerts
+- 🔍 Search & Category Filter — Search products by name, filter by category
 - 🛒 Sales Recording — Cart-based sales with cash, credit, and mobile money support
+- 🧾 Receipt Screen — Itemized receipt shown automatically after every sale
 - 👥 Customer & Credit Management — Track customers and outstanding balances
 - 📋 Credit History — Per-customer itemized credit purchase history
+- 💳 Credit Payment Recording — Record partial or full payments against balances
 - 📊 Reports & Dashboard — Today's revenue, weekly/monthly summaries
 - 🧾 Transactions — Date range filtered transaction history
-- 🏆 Best Selling Products — Ranked product performance
-- 📅 Daily Sales History — Day-by-day sales breakdown
-- ⚙️ Business Profile — Set business name, address, owner info, currency
+- 🏆 Best Selling Products — Ranked product performance with progress bars
+- 📅 Daily Sales History — Day-by-day sales breakdown with best day highlight
+- ⚙️ Business Profile — Set business name, address, owner info, currency symbol
 - 🌙 Dark Mode — Persistent light/dark theme toggle
-- 🔍 Search & Filter — Search products and customers, filter by category
+- 🔔 Low Stock Notifications — Push notifications on Android, in-app banner on Web
+- 🔒 Per-User Data Isolation — Every account has its own completely separate business data
 
 ---
 
@@ -37,10 +41,12 @@ A Flutter-based business management system for small and medium enterprises (SME
 |---|---|
 | Flutter (Dart) | UI framework — Android & Web |
 | Firebase Auth | User authentication |
-| Cloud Firestore | Real-time database |
+| Cloud Firestore | Real-time NoSQL database |
 | Riverpod | State management |
-| Google Fonts | Typography |
-| Shared Preferences | Local storage (settings) |
+| Google Fonts | Typography (Inter) |
+| Shared Preferences | Local storage for settings |
+| flutter_local_notifications | Push notifications on Android |
+| flutter_launcher_icons | App icon generation |
 
 ---
 
@@ -59,7 +65,7 @@ Make sure you have the following installed on your PC:
 | VS Code | https://code.visualstudio.com |
 | Android Studio | https://developer.android.com/studio |
 
-#### VS Code Extensions (install these after VS Code):
+#### VS Code Extensions (install after VS Code):
 - **Flutter** (by Dart Code)
 - **Dart** (auto-installed with Flutter)
 
@@ -100,19 +106,17 @@ git clone https://github.com/YOUR_USERNAME/sme-system.git
 cd sme-system
 ```
 
-> Ask Barry for the exact repository URL.
+
 
 ---
 
 ### 4. Get the Firebase Configuration File
 
-This project uses Firebase. The configuration file (`google-services.json` for Android and `firebase_options.dart`) contains credentials and is **not committed to the repo** for security reasons.
+This project uses Firebase. The configuration file contains credentials and is **not committed to the repo** for security reasons.
 
-Ask Barry to share:
-- `lib/firebase_options.dart`
-- `android/app/google-services.json`
-
-Place them in the exact paths shown above.
+Ask Barry to share these two files:
+- `lib/firebase_options.dart` → place in `lib/`
+- `android/app/google-services.json` → place in `android/app/`
 
 ---
 
@@ -134,7 +138,7 @@ flutter run -d chrome
 
 ### 7. Run on Android
 
-First, enable USB Debugging on your phone:
+First enable USB Debugging on your phone:
 1. Go to **Settings → About Phone**
 2. Tap **Build Number** 7 times
 3. Go back to **Settings → Developer Options**
@@ -149,7 +153,7 @@ flutter run          # runs on your connected phone
 
 ---
 
-### 8. Build an APK (for sharing/installing without USB)
+### 8. Build a Release APK
 
 ```bash
 flutter build apk --release
@@ -162,9 +166,25 @@ build\app\outputs\flutter-apk\app-release.apk
 
 You can copy this file to any Android phone and install it directly.
 
-> **Note:** If you get an NDK error during build, delete the folder at:
+> **NDK Error during build?** Delete the folder at:
 > `C:\Users\YourName\AppData\Local\Android\sdk\ndk\[version]`
-> Then run the build command again — it will re-download automatically.
+> Then run the build command again — it re-downloads automatically.
+
+---
+
+## 📱 App Navigation
+
+The app uses a bottom navigation bar with 5 tabs:
+
+| Tab | Screen |
+|---|---|
+| Dashboard | Revenue overview, best sellers preview, recent transactions |
+| Transactions | Date-range filtered full transaction history |
+| Sales | Cart-based new sale recording |
+| Inventory | Product list with search, category filter, restock |
+| Customers | Customer list, credit balances, payment recording |
+
+Settings (business profile, dark mode, sign out) are accessible via the ⚙️ icon in the top right of the app bar.
 
 ---
 
@@ -172,135 +192,142 @@ You can copy this file to any Android phone and install it directly.
 
 ```
 lib/
-├── main.dart                        # App entry point
-├── firebase_options.dart            # Firebase config (not in repo)
+├── main.dart
+├── firebase_options.dart            ← not in repo, get from Barry
 │
 ├── core/
 │   ├── constants/
-│   │   └── app_colors.dart          # App color palette
-│   └── theme/
-│       └── app_theme.dart           # Light and dark themes
+│   │   └── app_colors.dart
+│   ├── theme/
+│   │   └── app_theme.dart           ← light and dark themes
+│   └── services/
+│       ├── notification_service.dart
+│       └── low_stock_monitor.dart
 │
 ├── models/
-│   ├── product.dart                 # Product data model
-│   ├── customer.dart                # Customer data model
-│   └── transaction.dart            # Transaction data model
+│   ├── product.dart
+│   ├── customer.dart
+│   └── transaction.dart
 │
 └── features/
     ├── auth/
-    │   ├── auth_provider.dart       # Firebase Auth logic
-    │   ├── auth_gate.dart           # Auth state router
-    │   └── login_screen.dart        # Sign in / Sign up screen
+    │   ├── auth_provider.dart
+    │   ├── auth_gate.dart
+    │   └── login_screen.dart
     │
     ├── shell/
-    │   └── main_shell.dart          # Bottom navigation shell
+    │   └── main_shell.dart          ← bottom nav + app bar
     │
     ├── inventory/
-    │   ├── inventory_screen.dart    # Product list with search & filter
-    │   ├── inventory_provider.dart  # Inventory Riverpod providers
+    │   ├── inventory_screen.dart
+    │   ├── inventory_provider.dart
     │   └── widgets/
     │       ├── product_card.dart
     │       ├── product_form_dialog.dart
     │       └── restock_dialog.dart
     │
     ├── sales/
-    │   ├── sales_screen.dart        # Cart-based sales screen
-    │   ├── sales_provider.dart      # Cart & sales providers
+    │   ├── sales_screen.dart
+    │   ├── sales_provider.dart
+    │   ├── receipt_screen.dart
     │   └── widgets/
     │       └── cart_item_tile.dart
     │
     ├── customers/
-    │   ├── customers_screen.dart    # Customer list
-    │   ├── customer_provider.dart   # Customer providers
+    │   ├── customers_screen.dart
+    │   ├── customer_provider.dart
     │   ├── credit_history_screen.dart
     │   └── widgets/
     │       ├── customer_form_dialog.dart
     │       └── record_payment_dialog.dart
     │
     ├── reports/
-    │   ├── reports_screen.dart      # Main dashboard
-    │   ├── reports_provider.dart    # All report providers
-    │   ├── transactions_screen.dart # Date-filtered transactions
-    │   ├── best_sellers_screen.dart # Best selling products
-    │   ├── daily_sales_screen.dart  # Daily sales history
+    │   ├── reports_screen.dart
+    │   ├── reports_provider.dart
+    │   ├── transactions_screen.dart
+    │   ├── best_sellers_screen.dart
+    │   ├── daily_sales_screen.dart
     │   └── widgets/
     │       ├── summary_card.dart
     │       └── recent_transactions.dart
     │
     └── settings/
-        ├── settings_screen.dart     # Business profile & dark mode
-        └── settings_provider.dart  # Settings providers
+        ├── settings_screen.dart
+        └── settings_provider.dart
 ```
 
 ---
 
 ## 🔥 Firestore Database Structure
 
+All data is scoped per user — each business account has completely isolated data:
+
 ```
 firestore/
-├── products/
-│   └── {productId}
-│       ├── name: string
-│       ├── category: string
-│       ├── price: number
-│       ├── stockQuantity: number
-│       ├── lowStockThreshold: number
-│       └── createdAt: timestamp
-│
-├── customers/
-│   └── {customerId}
-│       ├── name: string
-│       ├── phone: string
-│       ├── creditBalance: number
-│       └── createdAt: timestamp
-│
-└── transactions/
-    └── {transactionId}
-        ├── items: array
-        │   ├── productId: string
-        │   ├── productName: string
-        │   ├── quantity: number
-        │   └── unitPrice: number
-        ├── totalAmount: number
-        ├── paymentMethod: string (cash | credit | mobileMoney)
-        ├── customerId: string (nullable)
-        └── createdAt: timestamp
+└── users/
+    └── {userId}/
+        ├── products/
+        │   └── {productId}
+        │       ├── name: string
+        │       ├── category: string
+        │       ├── price: number
+        │       ├── stockQuantity: number
+        │       ├── lowStockThreshold: number
+        │       └── createdAt: timestamp
+        │
+        ├── customers/
+        │   └── {customerId}
+        │       ├── name: string
+        │       ├── phone: string
+        │       ├── creditBalance: number
+        │       └── createdAt: timestamp
+        │
+        └── transactions/
+            └── {transactionId}
+                ├── items: array
+                │   ├── productId: string
+                │   ├── productName: string
+                │   ├── quantity: number
+                │   └── unitPrice: number
+                ├── totalAmount: number
+                ├── paymentMethod: string (cash | credit | mobileMoney)
+                ├── customerId: string (nullable)
+                └── createdAt: timestamp
 ```
 
 ---
 
 ## 🔒 Firestore Security Rules
 
-The following rules are applied in Firebase Console → Firestore → Rules:
+Applied in Firebase Console → Firestore → Rules:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
     }
   }
 }
 ```
 
-Only authenticated users can read or write data.
+Each user can only access their own data.
 
 ---
 
-## 📌 Firestore Indexes Required
+## 📌 Firestore Index Required
 
-This project uses one composite index. Create it manually in Firebase Console → Firestore → Indexes:
+Create this composite index in Firebase Console → Firestore → Indexes:
 
-| Collection | Field 1 | Field 2 | Field 3 | Scope |
+| Collection Group | Field 1 | Field 2 | Field 3 | Scope |
 |---|---|---|---|---|
-| transactions | customerId (Asc) | paymentMethod (Asc) | createdAt (Desc) | Collection |
+| transactions | customerId (Asc) | paymentMethod (Asc) | createdAt (Desc) | Collection group |
 
 ---
 
 ## 🌿 Git Workflow
-
-We use a simple branching strategy:
 
 ```
 main          ← stable, working code only
@@ -311,28 +338,28 @@ feature/xxx   ← individual features
 ### Day-to-day workflow:
 
 ```bash
-# Before starting work, pull latest changes
+# Pull latest before starting
 git pull origin main
 
 # Create a feature branch
 git checkout -b feature/your-feature-name
 
-# Work on your feature, then commit
+# Commit your work
 git add .
 git commit -m "Add: description of what you did"
 
 # Push your branch
 git push origin feature/your-feature-name
 
-# Open a Pull Request on GitHub for Barry to review before merging
+# Open a Pull Request on GitHub for review before merging to main
 ```
 
 ### Commit message format:
 ```
-Add: new feature
-Fix: bug description
-Update: what was changed
-Remove: what was removed
+Add: new feature or file
+Fix: bug or error
+Update: change to existing feature
+Remove: deleted something
 ```
 
 ---
@@ -340,27 +367,30 @@ Remove: what was removed
 ## ⚠️ Common Issues & Fixes
 
 ### `flutterfire` not recognized
-Add Pub Cache to your PATH:
+Add Pub Cache to your system PATH:
 ```
 C:\Users\YourName\AppData\Local\Pub\Cache\bin
 ```
-Then restart VS Code.
+Then fully restart VS Code.
 
 ### NDK build error
-Delete the corrupted NDK folder:
+Delete the corrupted folder:
 ```
-C:\Users\YourName\AppData\Local\Android\sdk\ndk\[version number]
+C:\Users\YourName\AppData\Local\Android\sdk\ndk\[version]
 ```
-Then run `flutter build apk --release` again.
+Run `flutter build apk --release` again.
 
-### Firestore index error
-Open the URL printed in the terminal and click **Create Index** in Firebase Console. Wait ~2 minutes.
+### Firestore permission error when switching accounts
+This is fixed by the `ValueKey(user.uid)` in `auth_gate.dart` which resets all providers on user change. If it still occurs, do a full hot restart (`R` in terminal).
+
+### Firestore index error on credit history
+Open the URL printed in the terminal and click **Create Index** in Firebase Console. Wait ~2 minutes for it to build.
 
 ### `firebase_options.dart` missing
-Ask Barry for this file — it contains Firebase credentials and is not stored in the repo.
+This file is not in the repo. Contact Barry for it.
 
-### Multiple heroes error
-Every `FloatingActionButton` needs a unique `heroTag`:
+### Multiple heroes error (FloatingActionButton)
+Every FAB needs a unique `heroTag`:
 ```dart
 FloatingActionButton(
   heroTag: 'unique_tag_name',
@@ -368,8 +398,22 @@ FloatingActionButton(
 )
 ```
 
+### Core library desugaring error (APK build)
+Make sure `android/app/build.gradle.kts` has:
+```kotlin
+compileOptions {
+  isCoreLibraryDesugaringEnabled = true
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+
+dependencies {
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+```
+
 ---
 
 ## 📞 Contact
 
-For access to the Firebase project or the `firebase_options.dart` file, contact **mwewankandu**.
+For Firebase config files or repo access, contact **mwewankandu**.
