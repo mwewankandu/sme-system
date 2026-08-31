@@ -25,18 +25,22 @@ class CreditHistoryScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Row(
               children: [
-                _headerStat(
-                  'Outstanding Balance',
-                  'ZMW ${customer.creditBalance.toStringAsFixed(2)}',
-                  AppColors.lowStock,
-                  AppColors.warning,
+                Expanded(
+                  child: _headerStat(
+                    'Outstanding Balance',
+                    'ZMW ${customer.creditBalance.toStringAsFixed(2)}',
+                    AppColors.lowStock,
+                    AppColors.warning,
+                  ),
                 ),
-                const SizedBox(width: 24),
-                _headerStat(
-                  'Phone',
-                  customer.phone,
-                  Colors.white.withOpacity(0.15),
-                  Colors.white,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _headerStat(
+                    'Phone',
+                    customer.phone,
+                    Colors.white.withOpacity(0.15),
+                    Colors.white,
+                  ),
                 ),
               ],
             ),
@@ -96,11 +100,11 @@ class CreditHistoryScreen extends ConsumerWidget {
                   children: [
                     _stat('Credit Purchases',
                         '${transactions.length}', AppColors.primary),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: 12),
                     _stat('Total Purchased',
                         'ZMW ${totalPurchased.toStringAsFixed(2)}',
                         AppColors.textPrimary),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: 12),
                     _stat('Still Owes',
                         'ZMW ${customer.creditBalance.toStringAsFixed(2)}',
                         AppColors.danger),
@@ -130,6 +134,7 @@ class CreditHistoryScreen extends ConsumerWidget {
   Widget _headerStat(
       String label, String value, Color bgColor, Color textColor) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
@@ -137,34 +142,58 @@ class CreditHistoryScreen extends ConsumerWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: textColor.withOpacity(0.8))),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: textColor)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: textColor.withOpacity(0.8),
+            ),
+          ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _stat(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary)),
-        Text(value,
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: color)),
-      ],
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -225,13 +254,18 @@ class _TransactionCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           '${item.productName} × ${item.quantity}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textPrimary),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         'ZMW ${item.subtotal.toStringAsFixed(2)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary),

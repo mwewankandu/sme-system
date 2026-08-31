@@ -171,8 +171,6 @@ class TransactionsScreen extends ConsumerWidget {
               }
 
               // Summary for the period
-              final total = transactions.fold(
-                  0.0, (sum, t) => sum + t.totalAmount);
               final cashTotal = transactions
                   .where(
                       (t) => t.paymentMethod == PaymentMethod.cash)
@@ -195,34 +193,30 @@ class TransactionsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
+
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              _stat('Transactions',
-                                  '${transactions.length}',
-                                  AppColors.primary),
-                              _stat('Total Revenue',
-                                  'ZMW ${total.toStringAsFixed(2)}',
-                                  AppColors.secondary),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              _miniStat('Cash',
-                                  'ZMW ${cashTotal.toStringAsFixed(2)}',
-                                  AppColors.secondary),
-                              _miniStat('Credit',
-                                  'ZMW ${creditTotal.toStringAsFixed(2)}',
-                                  AppColors.danger),
-                              _miniStat('Mobile',
-                                  'ZMW ${mobileTotal.toStringAsFixed(2)}',
-                                  AppColors.primary),
-                            ],
-                          ),
+  children: [
+    Expanded(
+      child: _miniStat('Cash',
+          'ZMW ${cashTotal.toStringAsFixed(2)}',
+          AppColors.secondary),
+    ),
+    const SizedBox(width: 8),
+    Expanded(
+      child: _miniStat('Credit',
+          'ZMW ${creditTotal.toStringAsFixed(2)}',
+          AppColors.danger),
+    ),
+    const SizedBox(width: 8),
+    Expanded(
+      child: _miniStat('Mobile',
+          'ZMW ${mobileTotal.toStringAsFixed(2)}',
+          AppColors.primary),
+    ),
+  ],
+),
+                          
+                          
                         ],
                       ),
                     ),
@@ -268,43 +262,32 @@ class TransactionsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _stat(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _miniStat(String label, String value, Color color) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
       children: [
         Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary)),
-        Text(value,
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color)),
-      ],
-    );
-  }
-
-  Widget _miniStat(String label, String value, Color color) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(label,
-              style: TextStyle(fontSize: 11, color: color)),
-          Text(value,
+            style: TextStyle(fontSize: 11, color: color)),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value,
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: color)),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+  
+  
 }
 
 class _DateButton extends StatelessWidget {
