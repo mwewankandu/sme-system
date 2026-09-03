@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/transaction.dart';
 import '../../models/customer.dart';
 import '../customers/customer_provider.dart';
+import '../settings/settings_provider.dart';
 
 class ReceiptScreen extends ConsumerWidget {
   final SaleTransaction transaction;
@@ -13,6 +14,7 @@ class ReceiptScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customersAsync = ref.watch(customersStreamProvider);
+    final profile = ref.watch(businessProfileProvider);
 
     // Find customer name if credit sale
     Customer? customer;
@@ -122,16 +124,37 @@ class ReceiptScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         const Icon(Icons.store_outlined,
-                            color: AppColors.primary, size: 32),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'SME Business System',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
+    color: AppColors.primary, size: 32),
+const SizedBox(height: 8),
+Text(
+  profile.businessName,
+  style: const TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+    color: AppColors.textPrimary,
+  ),
+),
+if (profile.address.isNotEmpty) ...[
+  const SizedBox(height: 2),
+  Text(
+    profile.address,
+    textAlign: TextAlign.center,
+    style: const TextStyle(
+      fontSize: 11,
+      color: AppColors.textSecondary,
+    ),
+  ),
+],
+if (profile.phone.isNotEmpty) ...[
+  const SizedBox(height: 2),
+  Text(
+    profile.phone,
+    style: const TextStyle(
+      fontSize: 11,
+      color: AppColors.textSecondary,
+    ),
+  ),
+],
                         const SizedBox(height: 4),
                         Text(
                           '$dateStr  $timeStr',
@@ -354,8 +377,8 @@ class ReceiptScreen extends ConsumerWidget {
                         bottomRight: Radius.circular(16),
                       ),
                     ),
-                    child: const Text(
-                      'Thank you for your business!',
+                    child: Text(
+                      'Thank you for your business ${profile.businessName}!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
