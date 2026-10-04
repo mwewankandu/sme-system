@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,7 +45,7 @@ class SettingsNotifier extends AsyncNotifier<BusinessProfile> {
   @override
   Future<BusinessProfile> build() async {
     final prefs = await SharedPreferences.getInstance();
-    return BusinessProfile(
+    final profile = BusinessProfile(
       businessName:
           prefs.getString(_keyBusinessName) ?? 'My Business',
       ownerName: prefs.getString(_keyOwnerName) ?? '',
@@ -51,6 +53,15 @@ class SettingsNotifier extends AsyncNotifier<BusinessProfile> {
       address: prefs.getString(_keyAddress) ?? '',
       currencySymbol: prefs.getString(_keyCurrency) ?? 'ZMW',
     );
+
+    // NEW: push an already-saved business name to the admin-visible
+    // profile (covers accounts that saved settings before the admin
+    // module existed). Not awaited, so it never delays app start.
+    if (profile.businessName != 'My Business') {
+      _syncBusinessName(profile.businessName);
+    }
+
+    return profile;
   }
 
   Future<void> save(BusinessProfile profile) async {
@@ -61,6 +72,23 @@ class SettingsNotifier extends AsyncNotifier<BusinessProfile> {
     await prefs.setString(_keyAddress, profile.address);
     await prefs.setString(_keyCurrency, profile.currencySymbol);
     state = AsyncValue.data(profile);
+
+    // NEW: keep the admin-visible profile in sync
+    await _syncBusinessName(profile.businessName);
+  }
+
+  /// Copies the business name to /userProfiles/{uid} so the admin can
+  /// see it. Failures are ignored on purpose: the local save has already
+  /// succeeded and must never be blocked by a network problem.
+  Future<void> _syncBusinessName(String name) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      await FirebaseFirestore.instance
+          .collection('userProfiles')
+          .doc(uid)
+          .set({'businessName': name}, SetOptions(merge: true));
+    } catch (_) {}
   }
 }
 
